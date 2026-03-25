@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}登录{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <div class="app-card-login-card">
+            <h2 class="page-title mb-4">登录</h2>
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.username.label(class="form-control-label") }}
+                    {{ form.username(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-control-label") }}
+                    {{ form.password(class="form-control") }}
+                </div>
+                
+                <!-- 新增验证码 -->
+                <div class="mb-3">
+                    <label for="captcha">请计算：{{ session.get('captcha_question', '计算题加载失败') }}</label>
+                    {% if form.captcha.errors %}
+                        {{ form.captcha(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.captcha.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.captcha(class="form-control", type="number") }}
+                    {% endif %}
+                </div>
+
+                <div class="d-grid mb-0">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 自定义弹窗模态框 -->
+<!-- <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">提示信息</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>请联系小明，以<a href="https://alidocs.dingtalk.com/i/nodes/QBnd5ExVEvlaA3NzF74x57XZJyeZqMmz?utm_scene=team_space" target="_blank">钉钉文档</a> 
+                获取密码</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<!--
+<script>
+    // 页面加载完成后显示模态框
+    document.addEventListener('DOMContentLoaded', function() {
+        $('#infoModal').modal('show');
+    });
+</script>
+-->
+
+{% endblock %}

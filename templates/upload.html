@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}上传新原型{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">上传新原型</h2>
+    </div>
+    <div class="app-card">
+    
+    <form id="uploadForm" action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
+    
+        
+        <script>
+            // 在表单提交前进行自定义验证
+            document.getElementById('uploadForm').addEventListener('submit', function(event) {
+                const zipFileInput = document.getElementById('zip_file');
+                if (zipFileInput.files.length === 0) {
+                    event.preventDefault(); // 阻止表单提交
+                    const dropZone = zipFileInput.closest('.drop-zone');
+                    dropZone.style.borderColor = '#dc3545'; // 边框变红
+                    alert('请上传 Axure 压缩包 (.zip) 文件！');
+                    
+                    // 恢复提交按钮状态
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '上传并保存';
+                    }
+                }
+            });
+            // 移除由WTForms自动添加的required属性，防止浏览器默认行为报错
+            document.addEventListener('DOMContentLoaded', function() {
+                const zipFileInput = document.getElementById('zip_file');
+                if(zipFileInput) zipFileInput.removeAttribute('required');
+            });
+        </script>
+
+        {{ form.hidden_tag() }}
+        
+        <h4>基础信息与文件</h4>
+        <div class="mb-3">
+            {{ form.name.label }}
+            {{ form.name(class="form-control", required=True) }}
+        </div>
+        <div class="mb-3">
+            {{ form.project_id.label }}
+            {{ form.project_id(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.rule_keywords.label }}
+            {{ form.rule_keywords(class="form-control", placeholder="jiao_hu_gui_ze, rule_1, rule_2") }}
+            {% if form.rule_keywords.description %}
+            <small class="form-text text-muted">{{ form.rule_keywords.description }}</small>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label>{{ form.zip_file.label }} <span class="text-danger">*</span></label>
+            <div class="drop-zone" data-target-input="zip_file">
+                <div class="drop-zone__prompt text-center">
+                    <!-- <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted" style="opacity: 0.5;"></i> -->
+                    <p class="mb-2 font-weight-bold">拖拽 Axure 压缩包 (.zip) 到这里</p>
+                    <!-- <p class="text-muted small mb-3">或者</p>
+                    <span class="btn btn-secondary btn-sm pointer-events-none">选择文件</span> -->
+                </div>
+                {{ form.zip_file(class="drop-zone__input") }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label>{{ form.source_file.label }}</label>
+            <div class="drop-zone" data-target-input="source_file">
+                <div class="drop-zone__prompt text-center">
+                    <!-- <i class="fas fa-file-code fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
+                    <p class="mb-1">拖拽源文件 (.rp) 到这里</p>
+                    <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
+                </div>
+                {{ form.source_file(class="drop-zone__input") }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label>{{ form.attachment_files.label }}</label>
+            <div class="drop-zone" data-target-input="attachment_files">
+                <div class="drop-zone__prompt text-center">
+                    <!-- <i class="fas fa-paperclip fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
+                    <p class="mb-1">拖拽附件到这里（可多选）</p>
+                    <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
+                </div>
+                {{ form.attachment_files(class="drop-zone__input", multiple=True) }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.description.label }}
+            {{ form.description(class="form-control", rows=3) }}
+        </div>
+
+        <hr>
+        <h4>公开访问设置</h4>
+        <div class="mb-3 form-check">
+            {{ form.is_public(class="form-check-input") }}
+            {{ form.is_public.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.access_password.label }}
+            {{ form.access_password(class="form-control", placeholder="留空则无需密码", type="text") }}
+        </div>
+        
+        <hr>
+        <h4>独立权限设置 (如果原型属于某个项目，将继承项目权限)</h4>
+        <p class="text-muted">上传者 ({{ current_user.username }}) 和管理员默认拥有所有权限。</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h5>用户组权限</h5>
+                <div class="row"><div class="col-6"><strong>可访问用户组</strong></div><div class="col-6"><strong>可编辑用户组</strong></div></div>
+                {% for group in groups %}
+                <div class="row border-bottom py-1">
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="viewing_groups" value="{{ group.id }}" id="view-group-{{group.id}}"> <label class="form-check-label" for="view-group-{{group.id}}">{{ group.name }}</label></div></div>
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="editing_groups" value="{{ group.id }}" id="edit-group-{{group.id}}"> <label class="form-check-label" for="edit-group-{{group.id}}">{{ group.name }}</label></div></div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-6">
+                <h5>用户权限</h5>
+                <div class="row"><div class="col-6"><strong>可访问用户</strong></div><div class="col-6"><strong>可编辑用户</strong></div></div>
+                {% for user in users %}
+                <div class="row border-bottom py-1">
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="viewing_users" value="{{ user.id }}" id="view-user-{{user.id}}"> <label class="form-check-label" for="view-user-{{user.id}}">{{ user.username }}</label></div></div>
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="editing_users" value="{{ user.id }}" id="edit-user-{{user.id}}"> <label class="form-check-label" for="edit-user-{{user.id}}">{{ user.username }}</label></div></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <hr>
+        <div class="mb-3 mt-4 mb-0">
+             <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+        </div>
+    </form>
+    </div>
+{% endblock %}

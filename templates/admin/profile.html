@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}个人资料{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">个人资料</h2>
+    </div>
+    <div class="app-card">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="alert alert-info">
+              <strong>你的 API Token:</strong> <code>{{ current_user.api_token }}</code>
+              <p class="small text-muted mb-0">这是你的个人访问令牌，用于通过 API 与本系统交互，请妥善保管。</p>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.username.label(class="form-control-label") }}
+                {{ form.username(class="form-control", readonly=true) }}
+            </div>
+            <div class="mb-3">
+                {{ form.password.label(class="form-control-label") }}
+                {{ form.password(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.confirm_password.label(class="form-control-label") }}
+                {{ form.confirm_password(class="form-control") }}
+            </div>
+            <div class="mb-3 mb-0">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

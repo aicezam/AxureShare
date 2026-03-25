@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}独立原型{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">独立原型</h2>
+        </div>
+        <div class="page-actions">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary" data-drawer-trigger data-title="上传新原型">上传新原型</a>
+        </div>
+    </div>
+    <div class="app-card">
+        <div class="table-responsive">
+            <table class="table table-hover table-modern table-sortable">
+                <thead>
+                    <tr>
+                        <th class="th-sortable" style="min-width: 200px;">原型名称</th>
+                        <!-- <th class="th-sortable text-nowrap" style="width: 1%;">附件</th> -->
+                        <th class="th-sortable text-nowrap" style="width: 20%;">所有者</th>
+                        <th class="th-sortable text-nowrap" style="width: 20%;">更新日期</th>
+                        <th class="text-nowrap" style="width: 10%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proto in prototypes %}
+                    <tr>
+                        <td><div class="text-truncate" title="{{ proto.name }}">{{ proto.name }}</div></td>
+                        <!-- <td class="text-nowrap">
+                            {% set attachment_count = (proto.attachments|length) + (1 if proto.attachment_filename else 0) %}
+                            {% if attachment_count > 0 %}
+                                {{ attachment_count }} 个
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td> -->
+                        <td class="text-nowrap">{{ proto.owner.username }}</td>
+                        <td class="text-nowrap">{{ proto.updated_at | datetime_cn }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{{ url_for('view_prototype', short_id=hashids.encode(proto.id)) }}" target="_blank" class="text-btn">查看</a>
+                                {% if has_edit_permission(proto) %}
+                                <a href="{{ url_for('edit_prototype', proto_id=proto.id) }}" class="text-btn" data-drawer-trigger data-title="编辑原型">编辑</a>
+                                {% if proto.source_filename %}
+                                <a href="{{ url_for('download_source', proto_id=proto.id) }}" class="text-btn">下载源文件</a>
+                                {% endif %}
+                                <form action="{{ url_for('delete_prototype', proto_id=proto.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('确定要永久删除这个原型吗？');">
+                                    <button type="submit" class="text-btn text-btn-danger">删除</button>
+                                </form>
+                                {% else %}
+                                <small class="text-muted">仅查看</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">暂无独立原型</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}创建用户组{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">创建新用户组</h2>
+    </div>
+    <div class="app-card">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.name.label }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="mb-3 mb-0">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+{% endblock %}

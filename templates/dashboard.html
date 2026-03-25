@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}项目列表{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">项目列表</h2>
+        </div>
+        <div class="page-actions">
+            <a href="{{ url_for('create_project') }}" class="btn btn-secondary" data-modal-trigger data-title="新建项目">新建项目</a>
+            <a href="{{ url_for('upload') }}" class="btn btn-primary" data-drawer-trigger data-title="上传新原型">上传新原型</a>
+        </div>
+    </div>
+    <div class="project-grid">
+        {% for project in projects %}
+        <div class="project-card">
+            <div class="project-card-header">
+                <h3 class="project-title">
+                    <a href="{{ url_for('project_dashboard', project_id=project.id) }}">{{ project.name }}</a>
+                </h3>
+                <!-- 可以放一个图标或者状态 -->
+                <i class="fas fa-folder text-muted"></i>
+            </div>
+            <div class="project-card-body">
+                <div class="project-meta">
+                    <i class="fas fa-user"></i>
+                    <span>{{ project.owner.username }}</span>
+                </div>
+                <div class="project-meta">
+                    <i class="far fa-clock"></i>
+                    <span>{{ project.last_activity_at | datetime_cn }}</span>
+                </div>
+            </div>
+            <div class="project-card-footer">
+                <a href="{{ url_for('project_dashboard', project_id=project.id) }}" class="text-btn">查看</a>
+                {% if has_edit_permission_project(project) %}
+                <a href="{{ url_for('edit_project', project_id=project.id) }}" class="text-btn" data-drawer-trigger data-title="项目设置">设置</a>
+                <form action="{{ url_for('delete_project', project_id=project.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('确定要删除这个项目吗？内部原型不会被删除。');">
+                    <button type="submit" class="text-btn text-btn-danger">删除</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state-card">
+            <i class="fas fa-folder-open fa-3x mb-3 text-muted" style="opacity: 0.5;"></i>
+            <p>暂无项目，请点击右上角创建。</p>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

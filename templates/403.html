@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}无权限访问{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="app-card text-center">
+                <h1 class="page-title">403 - 禁止访问</h1>
+                <p class="text-muted">抱歉，您没有权限执行此操作或查看此页面。</p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">返回首页</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

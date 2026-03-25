@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}用户组管理{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">用户组列表</h2>
+        <div class="page-actions">
+            <a href="{{ url_for('create_group') }}" class="btn btn-primary">创建新用户组</a>
+        </div>
+    </div>
+    <div class="app-card">
+        <div class="table-responsive">
+            <table class="table table-hover table-modern">
+                <thead><tr><th>ID</th><th>名称</th><th>成员数</th><th>操作</th></tr></thead>
+                <tbody>
+                {% for group in groups %}
+                    <tr>
+                        <td>{{ group.id }}</td>
+                        <td>{{ group.name }}</td>
+                        <td>{{ group.users|length }}</td>
+                        <td><div class="table-actions"><a href="{{ url_for('edit_group', group_id=group.id) }}" class="btn btn-sm btn-secondary">编辑</a></div></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

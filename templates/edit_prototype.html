@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}编辑原型{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">编辑: {{ proto.name }}</h2>
+    </div>
+    <div class="app-card">
+    <form method="POST" action="{{ url_for('edit_prototype', proto_id=proto.id) }}" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
+        {{ form.hidden_tag() }}
+        
+        <input type="hidden" id="source_action" name="source_action" value="">
+
+        <h4>基础信息与文件</h4>
+        <div class="mb-3">
+            {{ form.name.label }}
+            {{ form.name(class="form-control", required=True) }}
+        </div>
+        <div class="mb-3">
+            {{ form.project_id.label }}
+            {{ form.project_id(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label }}
+            {{ form.description(class="form-control", rows=3) }}
+        </div>
+        <div class="mb-3">
+            {{ form.rule_keywords.label }}
+            {{ form.rule_keywords(class="form-control", placeholder="jiao_hu_gui_ze, rule_1, rule_2") }}
+            {% if form.rule_keywords.description %}
+            <small class="form-text text-muted">{{ form.rule_keywords.description }}</small>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label>{{ form.zip_file.label }}</label>
+            <div class="drop-zone" data-target-input="zip_file">
+                <div class="drop-zone__prompt text-center">
+                    <!-- <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted" style="opacity: 0.5;"></i> -->
+                    <p class="mb-2 font-weight-bold">拖拽新的 Axure 压缩包 (.zip) 到这里</p>
+                    <!-- <p class="text-muted small mb-3">或者</p>
+                    <span class="btn btn-secondary btn-sm pointer-events-none">选择文件</span> -->
+                </div>
+                {{ form.zip_file(class="drop-zone__input") }}
+            </div>
+            <div class="text-muted mt-2">当前压缩包：已上传，上传新压缩包将覆盖旧版本。</div>
+        </div>
+        
+        <!-- 源文件区域 -->
+        <div class="mb-3">
+            <label>{{ form.source_file.label }}</label>
+            <!-- 仅在有源文件时显示这个DIV -->
+            <div id="source_file_display" {% if not proto.source_filename and not proto.source_savename %}style="display: none;"{% endif %}>
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <span>当前源文件: {{ proto.source_filename or proto.source_savename or "已上传" }}</span>
+                    <!-- 删除按钮现在是 type="button" -->
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="markForDeletion('source')">删除</button>
+                </div>
+            </div>
+            <!-- 仅在没有源文件时显示这个DIV -->
+            <div id="source_file_upload" {% if proto.source_filename or proto.source_savename %}style="display: none;"{% endif %}>
+                <div class="drop-zone" data-target-input="source_file">
+                    <div class="drop-zone__prompt text-center">
+                        <!-- <i class="fas fa-file-code fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
+                        <p class="mb-1">拖拽源文件 (.rp) 到这里</p>
+                        <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
+                    </div>
+                    {{ form.source_file(class="drop-zone__input") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 附件区域 -->
+        <div class="mb-3">
+            <label>{{ form.attachment_files.label }}</label>
+            {% if proto.attachment_filename or proto.attachment_savename or proto.attachments %}
+            <div class="mb-3">
+                <div class="text-muted mb-2">已有附件</div>
+                <div class="list-group">
+                    {% if proto.attachment_filename or proto.attachment_savename %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center" data-attachment-row>
+                        <div class="d-flex align-items-center">
+                            <input class="mr-2" type="checkbox" name="delete_legacy_attachment" value="1" id="delete-legacy-attachment">
+                            <span>{{ proto.attachment_filename or proto.attachment_savename }}</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <a href="{{ url_for('download_attachment', proto_id=proto.id) }}" class="btn btn-sm btn-outline-secondary mr-2">下载</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="toggleAttachmentDelete(this, 'delete-legacy-attachment')">删除</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% for attachment in proto.attachments %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center" data-attachment-row>
+                        <div class="d-flex align-items-center">
+                            <input class="mr-2" type="checkbox" name="delete_attachments" value="{{ attachment.id }}" id="delete-attachment-{{ attachment.id }}">
+                            <span>{{ attachment.filename }}</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <a href="{{ url_for('download_attachment_item', attachment_id=attachment.id) }}" class="btn btn-sm btn-outline-secondary mr-2">下载</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="toggleAttachmentDelete(this, 'delete-attachment-{{ attachment.id }}')">删除</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-muted mt-2">勾选后保存会删除对应附件</div>
+            </div>
+            {% endif %}
+            <div class="drop-zone" data-target-input="attachment_files">
+                <div class="drop-zone__prompt text-center">
+                    <!-- <i class="fas fa-paperclip fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
+                    <p class="mb-1">拖拽附件到这里（可多选）</p>
+                    <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
+                </div>
+                {{ form.attachment_files(class="drop-zone__input", multiple=True) }}
+            </div>
+        </div>
+        
+        <hr>
+        <h4>公开访问设置</h4>
+        <div class="mb-3 form-check">
+            {{ form.is_public(class="form-check-input") }}
+            {{ form.is_public.label(class="form-check-label") }}
+        </div>
+        <div class="mb-3">
+            {{ form.access_password.label }}
+            <div class="text-muted mb-2">
+                当前访问密码：{% if proto.access_password %}已设置{% else %}未设置{% endif %}
+            </div>
+            {{ form.access_password(class="form-control", placeholder="留空或清空以移除密码", type="text") }}
+        </div>
+        
+        <hr>
+        <h4>独立权限设置 (如果原型属于某个项目，将继承项目权限)</h4>
+        <p class="text-muted">所有者 ({{ proto.owner.username }}) 和管理员默认拥有所有权限。</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h5>用户组权限</h5>
+                <div class="row"><div class="col-6"><strong>可访问用户组</strong></div><div class="col-6"><strong>可编辑用户组</strong></div></div>
+                {% for group in groups %}
+                <div class="row border-bottom py-1">
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="viewing_groups" value="{{ group.id }}" id="view-group-{{group.id}}" {% if group in proto.viewing_groups %}checked{% endif %}> <label class="form-check-label" for="view-group-{{group.id}}">{{ group.name }}</label></div></div>
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="editing_groups" value="{{ group.id }}" id="edit-group-{{group.id}}" {% if group in proto.editing_groups %}checked{% endif %}> <label class="form-check-label" for="edit-group-{{group.id}}">{{ group.name }}</label></div></div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-6">
+                <h5>用户权限</h5>
+                <div class="row"><div class="col-6"><strong>可访问用户</strong></div><div class="col-6"><strong>可编辑用户</strong></div></div>
+                {% for user in users %}
+                <div class="row border-bottom py-1">
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="viewing_users" value="{{ user.id }}" id="view-user-{{user.id}}" {% if user in proto.viewing_users %}checked{% endif %}> <label class="form-check-label" for="view-user-{{user.id}}">{{ user.username }}</label></div></div>
+                    <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="editing_users" value="{{ user.id }}" id="edit-user-{{user.id}}" {% if user in proto.editing_users %}checked{% endif %}> <label class="form-check-label" for="edit-user-{{user.id}}">{{ user.username }}</label></div></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <hr>
+        <div class="mb-3 mt-4 mb-0">
+            <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+        </div>
+    </form>
+    
+    <!-- 新增：处理删除标记的 JavaScript -->
+    <script>
+        function markForDeletion(fileType) {
+            // 设置隐藏字段的值为 'delete'
+            document.getElementById(fileType + '_action').value = 'delete';
+
+            // 隐藏 "当前文件" 的提示
+            document.getElementById(fileType + '_file_display').style.display = 'none';
+
+            // 显示拖拽上传区域
+            document.getElementById(fileType + '_file_upload').style.display = 'block';
+        }
+
+        function toggleAttachmentDelete(button, checkboxId) {
+            const checkbox = document.getElementById(checkboxId);
+            if (!checkbox) return;
+            const row = button.closest('[data-attachment-row]');
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+                button.classList.remove('btn-outline-danger');
+                button.classList.add('btn-outline-secondary');
+                button.textContent = '撤销删除';
+                if (row) row.classList.add('text-muted');
+            } else {
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-outline-danger');
+                button.textContent = '删除';
+                if (row) row.classList.remove('text-muted');
+            }
+        }
+
+    </script>
+    </div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}编辑用户组{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">编辑用户组: {{ group.name }}</h2>
+    </div>
+    <div class="app-card">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.name.label }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <hr>
+            <h5>组成员</h5>
+            {% for user in users %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="users" value="{{ user.id }}" id="user-{{ user.id }}" {% if user in group.users %}checked{% endif %}>
+                <label class="form-check-label" for="user-{{ user.id }}">{{ user.username }}</label>
+            </div>
+            {% endfor %}
+            <hr>
+            <div class="mb-3 mb-0">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+{% endblock %}
