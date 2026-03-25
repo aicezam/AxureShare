@@ -11,6 +11,7 @@
 - 支持自动渲染markdown元件，需将该元件命名为`MDAS`
 - 原型分享，支持公开、密码保护分享、私有模式
 - **浏览器插件**：支持 [Edge 插件](https://microsoftedge.microsoft.com/addons/detail/axureshare-%E4%B8%8A%E4%BC%A0%E5%8A%A9%E6%89%8B/cngakhhemhjeeifiknbpjobbilonckgi) 预览 Axure 时快速上传到托管平台
+- ![示例](example.png)
 
 ## 技术栈
 
