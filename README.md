@@ -6,10 +6,10 @@
 
 - 用户认证与权限管理
 - Axure 原型文件上传与管理
-- 项目分组管理
-- AI 智能搜索原型内容
-- 向量数据库检索
-- 响应式 Web 界面
+- AI 智能答疑对话（内嵌向量数据库），需设置规则元件关键词（元件命名）
+- 支持多角色账号简易权限管理
+- 支持自动渲染markdown元件，需将该元件命名为`MDAS`
+- 原型分享，支持公开、密码保护分享、私有模式
 - **浏览器插件**：支持 [Edge 插件](https://microsoftedge.microsoft.com/addons/detail/axureshare-%E4%B8%8A%E4%BC%A0%E5%8A%A9%E6%89%8B/cngakhhemhjeeifiknbpjobbilonckgi) 预览 Axure 时快速上传到托管平台
 
 ## 技术栈
