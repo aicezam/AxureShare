@@ -127,4 +127,4 @@ flask db upgrade
 
 ## 许可证
 
-MIT License
+**AGPL v3 + 禁止商业化条款** - 详见 [LICENSE](LICENSE) 文件
