@@ -1,6 +1,6 @@
 # AGPL v3 - 禁止商业化条款
 
-## END USER TERMS
+## 最终用户条款
 
 本项目（Axure Share）根据 **GNU Affero General Public License v3 (AGPL v3)** 开源，但**明确禁止任何形式的商业化使用**。
 
@@ -62,7 +62,7 @@ https://github.com/aicezam/AxureShare
 > - 商业咨询、定制开发等商业服务
 > - 在淘宝、闲鱼等商业平台上销售或推广本项目或其衍生产品
 
-违反上述禁止商业化条款的个人或实体，将面临法律追究。
+违反本协议条款的行为，将依据适用法律承担相应责任。
 
 ---
 
@@ -73,3 +73,81 @@ https://github.com/aicezam/AxureShare
 ---
 
 *本协议的最终解释权归作者所有。*
+
+---
+
+# AGPL v3 - Non-Commercial License
+
+## END USER TERMS
+
+This project (Axure Share) is open source under **GNU Affero General Public License v3 (AGPL v3)**, with **explicit prohibition of any commercial use**.
+
+### Permitted Uses
+
+- ✅ Personal use, research, and educational purposes
+- ✅ Freely modify the source code
+- ✅ Freely distribute and share
+- ✅ Public deployment and use (non-commercial scenarios only)
+
+### Prohibited Uses
+
+- ❌ Any form of commercial use, including but not limited to:
+  - Using this project or its derivative works for commercial products or services
+  - Providing commercial hosting services
+  - Serving as a core component of a commercial SaaS platform
+  - Commercial consulting or services based on this project
+- ❌ Distributing modified versions under closed-source licenses
+
+### Obtaining Source Code
+
+You are entitled to obtain the complete source code of this project at:
+
+```
+https://github.com/aicezam/AxureShare
+```
+
+### Modifications and Derivative Works
+
+If you modify this project:
+
+1. You must:
+   - Retain all copyright notices
+   - Clearly indicate all modifications
+   - Release modified versions under AGPL v3
+   - Provide the complete source code of modifications
+
+2. You must ensure that:
+   - Any distribution or deployment (modified or not) must be open source
+   - Commercial use of this project is prohibited
+
+### Disclaimer
+
+This project is provided "AS IS", without any express or implied warranty, including but not limited to:
+- Merchantability
+- Fitness for a particular purpose
+- Non-infringement
+
+The authors shall not be held liable for any losses or damages arising from the use of this project.
+
+### Non-Commercial Special Terms
+
+In addition to the standard AGPL v3 terms, this project includes the following **Non-Commercial Special Terms**:
+
+> **Special Prohibition**: Regardless of whether this project is modified, no one may use this project, its derivative works, or services based on this project's core functionality for any commercial purpose, including but not limited to:
+> - As part of a commercial product or service
+> - Providing paid hosting or deployment services
+> - Embedding in commercial SaaS applications
+> - Commercial consulting, custom development, or other commercial services
+> - Selling or promoting this project or its derivatives on commercial platforms such as Taobao or Xianyu
+
+Any violation of this agreement's terms shall subject the violator to liability under applicable laws.
+
+---
+
+## Contact Information
+
+For commercial licensing or other inquiries, please contact the author.
+
+---
+
+*The final interpretation rights of this agreement are reserved by the author.*
