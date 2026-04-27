@@ -6,47 +6,137 @@
         <h2 class="page-title">上传新原型</h2>
     </div>
     <div class="app-card">
-    
     <form id="uploadForm" action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
-    
-        
         <script>
-            // 在表单提交前进行自定义验证
-            document.getElementById('uploadForm').addEventListener('submit', function(event) {
-                const zipFileInput = document.getElementById('zip_file');
-                if (zipFileInput.files.length === 0) {
-                    event.preventDefault(); // 阻止表单提交
-                    const dropZone = zipFileInput.closest('.drop-zone');
-                    dropZone.style.borderColor = '#dc3545'; // 边框变红
-                    alert('请上传 Axure 压缩包 (.zip) 文件！');
-                    
-                    // 恢复提交按钮状态
-                    const submitButton = this.querySelector('button[type="submit"]');
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = '上传并保存';
+            function initPrototypeUploadForm() {
+                const form = document.getElementById('uploadForm');
+                if (!form || form.dataset.uploadFormInitialized === 'true') {
+                    return;
+                }
+                form.dataset.uploadFormInitialized = 'true';
+
+                function updateFormVisibility() {
+                    const checkedRadio = form.querySelector('input[name="resource_type"]:checked');
+                    if (!checkedRadio) return;
+
+                    const resourceType = checkedRadio.value;
+                    const zipSection = form.querySelector('#section_zip');
+                    const urlSection = form.querySelector('#section_url');
+                    const aiKeywordsSection = form.querySelector('#section_ai_keywords');
+                    const sourceSection = form.querySelector('#section_source');
+                    const zipFileInput = form.querySelector('#zip_file');
+                    const targetUrlInput = form.querySelector('#target_url');
+
+                    if (resourceType === 'url') {
+                        if (zipSection) zipSection.style.display = 'none';
+                        if (sourceSection) sourceSection.style.display = 'none';
+                        if (urlSection) urlSection.style.display = 'block';
+                        if (aiKeywordsSection) aiKeywordsSection.style.display = 'none';
+                        if (zipFileInput) {
+                            zipFileInput.required = false;
+                        }
+                        if (targetUrlInput) {
+                            targetUrlInput.required = true;
+                        }
+                    } else {
+                        if (zipSection) zipSection.style.display = 'block';
+                        if (sourceSection) sourceSection.style.display = resourceType === 'axure' ? 'block' : 'none';
+                        if (urlSection) urlSection.style.display = 'none';
+                        if (aiKeywordsSection) aiKeywordsSection.style.display = 'block';
+                        if (zipFileInput) {
+                            zipFileInput.required = true;
+                        }
+                        if (targetUrlInput) {
+                            targetUrlInput.required = false;
+                        }
                     }
                 }
-            });
-            // 移除由WTForms自动添加的required属性，防止浏览器默认行为报错
-            document.addEventListener('DOMContentLoaded', function() {
-                const zipFileInput = document.getElementById('zip_file');
-                if(zipFileInput) zipFileInput.removeAttribute('required');
-            });
+
+                const zipFileInput = form.querySelector('#zip_file');
+                const targetUrlInput = form.querySelector('#target_url');
+                if (zipFileInput) {
+                    zipFileInput.removeAttribute('required');
+                }
+                if (targetUrlInput) {
+                    targetUrlInput.removeAttribute('required');
+                }
+
+                const radios = form.querySelectorAll('input[name="resource_type"]');
+                radios.forEach(r => r.addEventListener('change', updateFormVisibility));
+                updateFormVisibility();
+
+                form.addEventListener('submit', function(event) {
+                    const checkedRadio = form.querySelector('input[name="resource_type"]:checked');
+                    if (!checkedRadio) return;
+                    const resourceType = checkedRadio.value;
+
+                    if (resourceType !== 'url') {
+                        const zipFileInput = form.querySelector('#zip_file');
+                        if (zipFileInput && zipFileInput.files.length === 0) {
+                            event.preventDefault();
+                            const dropZone = zipFileInput.closest('.drop-zone');
+                            if (dropZone) dropZone.style.borderColor = '#dc3545';
+                            alert('请上传原型压缩包 (.zip) 文件！');
+
+                            const submitButton = form.querySelector('button[type="submit"]');
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.innerHTML = '上传并保存';
+                            }
+                        }
+                    } else {
+                        const targetUrlInput = form.querySelector('#target_url');
+                        if (targetUrlInput && !targetUrlInput.value.trim()) {
+                            event.preventDefault();
+                            alert('请输入链接地址！');
+                            const submitButton = form.querySelector('button[type="submit"]');
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.innerHTML = '上传并保存';
+                            }
+                        }
+                    }
+                });
+            }
+
+            initPrototypeUploadForm();
         </script>
 
         {{ form.hidden_tag() }}
         
         <h4>基础信息与文件</h4>
-        <div class="mb-3">
-            {{ form.name.label }}
-            {{ form.name(class="form-control", required=True) }}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.name.label }}
+                {{ form.name(class="form-control", required=True) }}
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">{{ form.resource_type.label.text }}</label>
+                <div class="d-flex align-items-center" style="height: 32px; gap: 20px;">
+                    {% for subfield in form.resource_type %}
+                    <div class="form-check mb-0">
+                        {{ subfield(class="form-check-input", style="margin-top: 0.2rem;") }}
+                        <label class="form-check-label fw-normal" style="margin-bottom: 0;" for="{{ subfield.id }}">
+                            {{ subfield.label.text }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
+
+        <div id="section_url" style="display:none;" class="mb-3">
+            {{ form.target_url.label }}
+            {{ form.target_url(class="form-control", id="target_url", placeholder="https://example.com") }}
+        </div>
+
         <div class="mb-3">
             {{ form.project_id.label }}
             {{ form.project_id(class="form-control") }}
         </div>
-        <div class="mb-3">
+
+        <div id="section_ai_keywords" class="mb-3">
             {{ form.rule_keywords.label }}
             {{ form.rule_keywords(class="form-control", placeholder="jiao_hu_gui_ze, rule_1, rule_2") }}
             {% if form.rule_keywords.description %}
@@ -54,28 +144,23 @@
             {% endif %}
         </div>
         
-        <div class="mb-3">
+        <div id="section_zip" class="mb-3">
             <label>{{ form.zip_file.label }} <span class="text-danger">*</span></label>
             <div class="drop-zone" data-target-input="zip_file">
                 <div class="drop-zone__prompt text-center">
-                    <!-- <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted" style="opacity: 0.5;"></i> -->
-                    <p class="mb-2 font-weight-bold">拖拽 Axure 压缩包 (.zip) 到这里</p>
-                    <!-- <p class="text-muted small mb-3">或者</p>
-                    <span class="btn btn-secondary btn-sm pointer-events-none">选择文件</span> -->
+                    <p class="mb-2 font-weight-bold">拖拽原型压缩包 (.zip) 到这里</p>
                 </div>
-                {{ form.zip_file(class="drop-zone__input") }}
+                {{ form.zip_file(class="drop-zone__input", id="zip_file") }}
             </div>
         </div>
 
-        <div class="mb-3">
+        <div id="section_source" class="mb-3">
             <label>{{ form.source_file.label }}</label>
             <div class="drop-zone" data-target-input="source_file">
                 <div class="drop-zone__prompt text-center">
-                    <!-- <i class="fas fa-file-code fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
                     <p class="mb-1">拖拽源文件 (.rp) 到这里</p>
-                    <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
                 </div>
-                {{ form.source_file(class="drop-zone__input") }}
+                {{ form.source_file(class="drop-zone__input", id="source_file") }}
             </div>
         </div>
 
@@ -98,9 +183,11 @@
 
         <hr>
         <h4>公开访问设置</h4>
-        <div class="mb-3 form-check">
-            {{ form.is_public(class="form-check-input") }}
-            {{ form.is_public.label(class="form-check-label") }}
+        <div class="mb-3">
+            <div class="d-flex align-items-center">
+                {{ form.is_public(style="margin-top: 0; margin-right: 8px; cursor: pointer;") }}
+                {{ form.is_public.label(class="fw-normal mb-0", style="cursor: pointer;") }}
+            </div>
         </div>
         <div class="mb-3">
             {{ form.access_password.label }}

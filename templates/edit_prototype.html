@@ -11,10 +11,32 @@
         <input type="hidden" id="source_action" name="source_action" value="">
 
         <h4>基础信息与文件</h4>
-        <div class="mb-3">
-            {{ form.name.label }}
-            {{ form.name(class="form-control", required=True) }}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.name.label }}
+                {{ form.name(class="form-control", required=True) }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">{{ form.resource_type.label.text }}</label>
+                <div class="d-flex align-items-center" style="height: 32px; gap: 20px;">
+                    {% for subfield in form.resource_type %}
+                    <div class="form-check mb-0">
+                        {{ subfield(class="form-check-input", style="margin-top: 0.2rem;") }}
+                        <label class="form-check-label fw-normal" style="margin-bottom: 0;" for="{{ subfield.id }}">
+                            {{ subfield.label.text }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
+
+        <div id="section_url" style="display:none;" class="mb-3">
+            {{ form.target_url.label }}
+            {{ form.target_url(class="form-control", id="target_url", placeholder="https://example.com") }}
+        </div>
+
         <div class="mb-3">
             {{ form.project_id.label }}
             {{ form.project_id(class="form-control") }}
@@ -23,21 +45,18 @@
             {{ form.description.label }}
             {{ form.description(class="form-control", rows=3) }}
         </div>
-        <div class="mb-3">
+        <div id="section_ai_keywords" class="mb-3">
             {{ form.rule_keywords.label }}
             {{ form.rule_keywords(class="form-control", placeholder="jiao_hu_gui_ze, rule_1, rule_2") }}
             {% if form.rule_keywords.description %}
             <small class="form-text text-muted">{{ form.rule_keywords.description }}</small>
             {% endif %}
         </div>
-        <div class="mb-3">
+        <div id="section_zip" class="mb-3">
             <label>{{ form.zip_file.label }}</label>
             <div class="drop-zone" data-target-input="zip_file">
                 <div class="drop-zone__prompt text-center">
-                    <!-- <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted" style="opacity: 0.5;"></i> -->
-                    <p class="mb-2 font-weight-bold">拖拽新的 Axure 压缩包 (.zip) 到这里</p>
-                    <!-- <p class="text-muted small mb-3">或者</p>
-                    <span class="btn btn-secondary btn-sm pointer-events-none">选择文件</span> -->
+                    <p class="mb-2 font-weight-bold">拖拽新的原型压缩包 (.zip) 到这里</p>
                 </div>
                 {{ form.zip_file(class="drop-zone__input") }}
             </div>
@@ -45,23 +64,18 @@
         </div>
         
         <!-- 源文件区域 -->
-        <div class="mb-3">
+        <div id="section_source" class="mb-3">
             <label>{{ form.source_file.label }}</label>
-            <!-- 仅在有源文件时显示这个DIV -->
             <div id="source_file_display" {% if not proto.source_filename and not proto.source_savename %}style="display: none;"{% endif %}>
                 <div class="alert alert-info d-flex justify-content-between align-items-center">
                     <span>当前源文件: {{ proto.source_filename or proto.source_savename or "已上传" }}</span>
-                    <!-- 删除按钮现在是 type="button" -->
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="markForDeletion('source')">删除</button>
                 </div>
             </div>
-            <!-- 仅在没有源文件时显示这个DIV -->
             <div id="source_file_upload" {% if proto.source_filename or proto.source_savename %}style="display: none;"{% endif %}>
                 <div class="drop-zone" data-target-input="source_file">
                     <div class="drop-zone__prompt text-center">
-                        <!-- <i class="fas fa-file-code fa-2x mb-2 text-muted" style="opacity: 0.5;"></i> -->
                         <p class="mb-1">拖拽源文件 (.rp) 到这里</p>
-                        <!-- <span class="btn btn-sm btn-outline-secondary mt-2 pointer-events-none">选择文件</span> -->
                     </div>
                     {{ form.source_file(class="drop-zone__input") }}
                 </div>
@@ -115,9 +129,11 @@
         
         <hr>
         <h4>公开访问设置</h4>
-        <div class="mb-3 form-check">
-            {{ form.is_public(class="form-check-input") }}
-            {{ form.is_public.label(class="form-check-label") }}
+        <div class="mb-3">
+            <div class="d-flex align-items-center">
+                {{ form.is_public(style="margin-top: 0; margin-right: 8px; cursor: pointer;") }}
+                {{ form.is_public.label(class="fw-normal mb-0", style="cursor: pointer;") }}
+            </div>
         </div>
         <div class="mb-3">
             {{ form.access_password.label }}
@@ -160,14 +176,69 @@
     
     <!-- 新增：处理删除标记的 JavaScript -->
     <script>
+        function initPrototypeEditForm() {
+            const form = document.querySelector('form[action*="/prototype/"]') || document.querySelector('.app-card form');
+            if (!form || form.dataset.editFormInitialized === 'true') {
+                return;
+            }
+            form.dataset.editFormInitialized = 'true';
+
+            function updateFormVisibility() {
+                const checkedRadio = form.querySelector('input[name="resource_type"]:checked');
+                if (!checkedRadio) return;
+
+                const resourceType = checkedRadio.value;
+                const zipSection = form.querySelector('#section_zip');
+                const urlSection = form.querySelector('#section_url');
+                const aiKeywordsSection = form.querySelector('#section_ai_keywords');
+                const sourceSection = form.querySelector('#section_source');
+                const zipFileInput = form.querySelector('input[name="zip_file"]');
+                const targetUrlInput = form.querySelector('#target_url');
+
+                if (resourceType === 'url') {
+                    if (zipSection) zipSection.style.display = 'none';
+                    if (sourceSection) sourceSection.style.display = 'none';
+                    if (urlSection) urlSection.style.display = 'block';
+                    if (aiKeywordsSection) aiKeywordsSection.style.display = 'none';
+                    if (zipFileInput) {
+                        zipFileInput.required = false;
+                    }
+                    if (targetUrlInput) {
+                        targetUrlInput.required = true;
+                    }
+                } else {
+                    if (zipSection) zipSection.style.display = 'block';
+                    if (sourceSection) sourceSection.style.display = resourceType === 'axure' ? 'block' : 'none';
+                    if (urlSection) urlSection.style.display = 'none';
+                    if (aiKeywordsSection) aiKeywordsSection.style.display = 'block';
+                    if (zipFileInput) {
+                        zipFileInput.required = false;
+                    }
+                    if (targetUrlInput) {
+                        targetUrlInput.required = false;
+                    }
+                }
+            }
+
+            const zipFileInput = form.querySelector('input[name="zip_file"]');
+            const targetUrlInput = form.querySelector('#target_url');
+            if (zipFileInput) {
+                zipFileInput.removeAttribute('required');
+            }
+            if (targetUrlInput) {
+                targetUrlInput.removeAttribute('required');
+            }
+
+            const radios = form.querySelectorAll('input[name="resource_type"]');
+            radios.forEach(r => r.addEventListener('change', updateFormVisibility));
+            updateFormVisibility();
+        }
+
         function markForDeletion(fileType) {
-            // 设置隐藏字段的值为 'delete'
             document.getElementById(fileType + '_action').value = 'delete';
 
-            // 隐藏 "当前文件" 的提示
             document.getElementById(fileType + '_file_display').style.display = 'none';
 
-            // 显示拖拽上传区域
             document.getElementById(fileType + '_file_upload').style.display = 'block';
         }
 
@@ -189,6 +260,7 @@
             }
         }
 
+        initPrototypeEditForm();
     </script>
     </div>
 {% endblock %}

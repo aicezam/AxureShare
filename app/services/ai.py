@@ -166,6 +166,7 @@ class AiService:
 
         # 获取原型配置的关键词
         keywords = ["jiao_hu_gui_ze"]
+        proto_resource_type = "axure"
         try:
             from app.extensions import db
             from app.models import Prototype
@@ -175,6 +176,8 @@ class AiService:
                 loaded = json.loads(proto.rule_keywords)
                 if isinstance(loaded, list):
                     keywords = loaded
+            if proto and proto.resource_type:
+                proto_resource_type = str(proto.resource_type)
         except Exception:
             pass
 
@@ -183,13 +186,14 @@ class AiService:
             if not html:
                 continue
 
-            try:
-                injected = inject_ai_widget_into_html(html)
-                if injected != html:
-                    with open(fp, "w", encoding="utf-8") as f:
-                        f.write(injected)
-            except Exception:
-                pass
+            if proto_resource_type == "axure":
+                try:
+                    injected = inject_ai_widget_into_html(html)
+                    if injected != html:
+                        with open(fp, "w", encoding="utf-8") as f:
+                            f.write(injected)
+                except Exception:
+                    pass
 
             rule_text = extract_rule_text_from_html(html, labels=keywords)
             if not rule_text:

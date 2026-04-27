@@ -11,6 +11,7 @@ from wtforms import (
     IntegerField,
     MultipleFileField,
     PasswordField,
+    RadioField,
     SelectField,
     StringField,
     SubmitField,
@@ -97,13 +98,20 @@ class PrototypeUploadForm(FlaskForm):
     """原型上传表单。"""
 
     name = StringField("原型名称", validators=[DataRequired()])
+    resource_type = RadioField(
+        "资源类型",
+        choices=[("axure", "Axure压缩包"), ("static", "普通HTML静态资源"), ("url", "外部链接")],
+        default="axure",
+        validators=[DataRequired()],
+    )
+    target_url = StringField("链接地址 (仅链接类型)", validators=[Optional()])
     rule_keywords = StringField(
         "原型说明关键词(元件名称)",
         validators=[Optional()],
         description="多个关键词用逗号分隔，默认：jiao_hu_gui_ze",
     )
     project_id = SelectField("所属项目 (可选)", coerce=int, validators=[Optional()])
-    zip_file = FileField("Axure压缩包 (ZIP)", validators=[DataRequired()])
+    zip_file = FileField("压缩包 (ZIP)", validators=[Optional()])
     source_file = FileField("源文件 (.rp)", validators=[Optional()])
     attachment_files = MultipleFileField("附件 (可选)", validators=[Optional()])
     description = TextAreaField("备注", validators=[Optional()])
@@ -123,6 +131,12 @@ class PrototypeEditForm(FlaskForm):
     """原型编辑表单。"""
 
     name = StringField("原型名称", validators=[DataRequired()])
+    resource_type = RadioField(
+        "资源类型",
+        choices=[("axure", "Axure压缩包"), ("static", "普通HTML静态资源"), ("url", "外部链接")],
+        validators=[DataRequired()],
+    )
+    target_url = StringField("链接地址 (仅链接类型)", validators=[Optional()])
     rule_keywords = StringField(
         "原型说明关键词(元件名称)",
         validators=[Optional()],

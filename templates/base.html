@@ -183,6 +183,13 @@
                         // 执行容器内的脚本
                         executeScripts(container);
 
+                        if (typeof window.initPrototypeUploadForm === 'function') {
+                            window.initPrototypeUploadForm();
+                        }
+                        if (typeof window.initPrototypeEditForm === 'function') {
+                            window.initPrototypeEditForm();
+                        }
+
                         // 重新初始化拖拽区域（因为是新插入的 DOM）
                         if (window.initDropZones) window.initDropZones();
                         
@@ -201,12 +208,18 @@
 
         // 执行容器内的脚本
         function executeScripts(container) {
-            const scripts = container.querySelectorAll('script');
+            const scripts = Array.from(container.querySelectorAll('script'));
             scripts.forEach(oldScript => {
                 const newScript = document.createElement('script');
                 Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                oldScript.parentNode.replaceChild(newScript, oldScript);
+                if (oldScript.src) {
+                    newScript.src = oldScript.src;
+                } else {
+                    newScript.textContent = oldScript.textContent;
+                }
+                document.body.appendChild(newScript);
+                document.body.removeChild(newScript);
+                oldScript.remove();
             });
         }
 

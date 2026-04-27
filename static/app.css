@@ -146,7 +146,7 @@ body {
 /* 内容区域 padding */
 .app-card > .card-body,
 .app-card > *:not(table):not(.table-responsive):not(.table) {
-  padding: 24px 24px 0px 24px;
+  padding: 8px 24px 0px 24px;
 }
 
 .app-card-public-password {
@@ -606,8 +606,8 @@ label, .form-label {
   border-radius: 6px;
   background: var(--color-canvas-subtle);
   transition: all 0.2s;
-  padding: 40px 0;
-  margin: 16px 0;
+  padding: 24px 0;
+  margin: 8px 0 16px 0;
   text-align: center;
   cursor: pointer;
   overflow: hidden;

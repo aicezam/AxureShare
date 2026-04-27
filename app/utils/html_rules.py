@@ -759,3 +759,37 @@ def inject_ai_widget_into_html(html_content: str) -> str:
     if close_body_idx != -1:
         return html_content[:close_body_idx] + widget + html_content[close_body_idx:]
     return html_content + widget
+
+
+def remove_ai_widget_from_html(html_content: str) -> str:
+    """从 HTML 中移除 AI 对话挂件。"""
+
+    cleaned = html_content
+    patterns = [
+        r'<script\s+src="/static/marked\.min\.js"></script>\s*',
+        r'<script\s+src="/static/mermaid\.min\.js"></script>\s*',
+        r'<script\s+src="/static/markdown\.js"></script>\s*',
+        r'<div id="axure-share-ai-root"[\s\S]*?</script>\s*',
+    ]
+    for pattern in patterns:
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+    return cleaned
+
+
+def inject_base_tag_into_html(html_content: str, base_href: str) -> str:
+    """向 HTML 注入 <base> 标签。"""
+
+    if "<base" in html_content.lower():
+        return html_content
+
+    tag = f'\n<base href="{base_href}">\n'
+    lower = html_content.lower()
+    head_idx = lower.find("<head>")
+    if head_idx != -1:
+        return html_content[: head_idx + 6] + tag + html_content[head_idx + 6 :]
+    
+    html_idx = lower.find("<html>")
+    if html_idx != -1:
+        return html_content[: html_idx + 6] + tag + html_content[html_idx + 6 :]
+        
+    return tag + html_content

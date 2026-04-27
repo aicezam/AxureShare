@@ -37,7 +37,7 @@ from app.forms import (
 from app.models import Group, Project, Prototype, PrototypeAttachment, User, ViewLog
 from app.permissions import admin_required, has_edit_permission, has_edit_permission_project, has_view_permission, has_view_permission_project
 from app.services.prototype_files import ZipFileInvalidError
-from app.utils.html_rules import inject_ai_widget_into_html
+from app.utils.html_rules import inject_ai_widget_into_html, remove_ai_widget_from_html
 from app.utils.path_security import is_within_directory
 from app.utils.text_files import read_text_file
 from app.utils.network import get_remote_ip
@@ -238,6 +238,8 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
             proto = Prototype(
                 name=form.name.data,
                 project_id=project_id,
+                resource_type=form.resource_type.data,
+                target_url=form.target_url.data,
                 description=form.description.data,
                 owner_id=current_user.id,
                 updater_id=current_user.id,
@@ -283,20 +285,20 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
                 proto.source_filename = original_filename
                 proto.source_savename = savename
 
-            try:
-                proto_path = deps.prototype_files_service.save_zip_and_extract(
-                    proto_uuid=proto.uuid, zip_file=form.zip_file.data, overwrite=False
-                )
-            except ZipFileInvalidError:
-                db.session.delete(proto)
-                db.session.commit()
-                flash("上传失败：ZIP文件已损坏或格式不正确。", "danger")
-                return redirect(url_for("upload"))
-
-            try:
-                deps.prototype_service.process_ai(prototype_id=proto.id, proto_path=proto_path)
-            except Exception:
-                app.logger.exception("AI处理原型失败")
+            if proto.resource_type != "url" and form.zip_file.data:
+                try:
+                    proto_path = deps.prototype_files_service.save_zip_and_extract(
+                        proto_uuid=proto.uuid, zip_file=form.zip_file.data, overwrite=False
+                    )
+                    try:
+                        deps.prototype_service.process_ai(prototype_id=proto.id, proto_path=proto_path)
+                    except Exception:
+                        app.logger.exception("AI处理原型失败")
+                except ZipFileInvalidError:
+                    db.session.delete(proto)
+                    db.session.commit()
+                    flash("上传失败：ZIP文件已损坏或格式不正确。", "danger")
+                    return redirect(url_for("upload"))
 
             db.session.commit()
             flash("原型上传并配置成功！", "success")
@@ -325,6 +327,8 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
 
         if form.validate_on_submit():
             proto.name = form.name.data
+            proto.resource_type = form.resource_type.data
+            proto.target_url = form.target_url.data
             proto.project_id = form.project_id.data if form.project_id.data != 0 else None
             proto.description = form.description.data
 
@@ -739,7 +743,7 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
         return render_template("public_password.html", form=form, proto=proto, short_id=short_id, hide_nav=True)
 
     @app.route("/v/<short_id>/")
-    @app.route("/v/<short_id>/<path:filename>")
+    @app.route("/v/<short_id>/<path:filename>", strict_slashes=False)
     def view_prototype(short_id: str, filename: str | None = None) -> Response:
         prototype_id_tuple = deps.hashids.decode(short_id)
         if not prototype_id_tuple:
@@ -751,6 +755,10 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
             user_id = current_user.id if current_user.is_authenticated else None
             db.session.add(ViewLog(prototype_id=proto.id, user_id=user_id, ip=get_remote_ip(request)))
             db.session.commit()
+
+        # 如果是 URL 类型，直接跳转
+        if proto.resource_type == "url" and proto.target_url:
+            return redirect(proto.target_url)
 
         verified = bool(
             proto.is_public
@@ -766,12 +774,50 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
                 return login_manager.unauthorized()
             abort(403)
 
+        if filename:
+            filename = urllib.parse.unquote(filename).replace("\\", "/").strip("/")
+
         proto_path = os.path.join(str(app.config["PROTOTYPES_FOLDER"]), proto.uuid)
+
+        def render_prototype_html(html_path: str) -> Response | None:
+            """按资源类型渲染原型 HTML。"""
+
+            try:
+                html = read_text_file(html_path)
+                if not html:
+                    return None
+                if proto.resource_type == "axure":
+                    rendered_html = inject_ai_widget_into_html(html)
+                else:
+                    rendered_html = remove_ai_widget_from_html(html)
+                return Response(rendered_html, mimetype="text/html; charset=utf-8")
+            except Exception:
+                return None
+
         if filename is None:
             possible_entries = ["index.html", "start.html"]
+            if proto.resource_type == "static":
+                for entry in possible_entries:
+                    entry_path = os.path.join(proto_path, entry)
+                    if os.path.exists(entry_path):
+                        rendered = render_prototype_html(entry_path)
+                        if rendered:
+                            return rendered
+                dir_contents = os.listdir(proto_path) if os.path.exists(proto_path) else []
+                sub_dirs = [d for d in dir_contents if os.path.isdir(os.path.join(proto_path, d))]
+                if len(sub_dirs) == 1:
+                    nested_path = os.path.join(proto_path, sub_dirs[0])
+                    for entry in possible_entries:
+                        entry_path = os.path.join(nested_path, entry)
+                        if os.path.exists(entry_path):
+                            rendered = render_prototype_html(entry_path)
+                            if rendered:
+                                return rendered
+
             for entry in possible_entries:
                 if os.path.exists(os.path.join(proto_path, entry)):
-                    return redirect(url_for("view_prototype", short_id=short_id, filename=entry) + "#g=1")
+                    entry_url = url_for("view_prototype", short_id=short_id, filename=entry)
+                    return redirect(entry_url + "#g=1" if proto.resource_type == "axure" else entry_url)
             dir_contents = os.listdir(proto_path) if os.path.exists(proto_path) else []
             sub_dirs = [d for d in dir_contents if os.path.isdir(os.path.join(proto_path, d))]
             if len(sub_dirs) == 1:
@@ -779,7 +825,8 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
                 for entry in possible_entries:
                     if os.path.exists(os.path.join(nested_path, entry)):
                         correct_filename = os.path.join(sub_dirs[0], entry).replace("\\", "/")
-                        return redirect(url_for("view_prototype", short_id=short_id, filename=correct_filename) + "#g=1")
+                        entry_url = url_for("view_prototype", short_id=short_id, filename=correct_filename)
+                        return redirect(entry_url + "#g=1" if proto.resource_type == "axure" else entry_url)
             document_js_path = os.path.join(proto_path, "data", "document.js")
             if os.path.exists(document_js_path):
                 doc_text = ""
@@ -797,16 +844,32 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
                             continue
                         file_candidate = os.path.join(proto_path, rel)
                         if is_within_directory(proto_path, file_candidate) and os.path.exists(file_candidate):
-                            return redirect(url_for("view_prototype", short_id=short_id, filename=rel) + "#g=1")
+                            entry_url = url_for("view_prototype", short_id=short_id, filename=rel)
+                            return redirect(entry_url + "#g=1" if proto.resource_type == "axure" else entry_url)
                         encoded_segments = [urllib.parse.quote(seg) for seg in rel.split("/")]
                         encoded_rel = "/".join(encoded_segments)
                         file_candidate = os.path.join(proto_path, encoded_rel)
                         if is_within_directory(proto_path, file_candidate) and os.path.exists(file_candidate):
-                            return redirect(url_for("view_prototype", short_id=short_id, filename=rel) + "#g=1")
+                            entry_url = url_for("view_prototype", short_id=short_id, filename=rel)
+                            return redirect(entry_url + "#g=1" if proto.resource_type == "axure" else entry_url)
             flash("无法找到原型入口文件 (index.html 或 start.html)。", "danger")
             return redirect(url_for("dashboard"))
 
         file_path = os.path.join(proto_path, filename)
+        if not os.path.exists(file_path):
+            index_candidate = os.path.join(proto_path, filename, "index.html")
+            if is_within_directory(proto_path, index_candidate) and os.path.exists(index_candidate):
+                rendered = render_prototype_html(index_candidate)
+                if rendered:
+                    return rendered
+        if is_within_directory(proto_path, file_path) and os.path.isdir(file_path):
+            for entry in ["index.html", "start.html"]:
+                entry_path = os.path.join(file_path, entry)
+                if os.path.exists(entry_path):
+                    rendered = render_prototype_html(entry_path)
+                    if rendered:
+                        return rendered
+            abort(404)
         if not is_within_directory(proto_path, file_path) or not os.path.exists(file_path):
             encoded_segments = [urllib.parse.quote(seg) for seg in filename.split("/")]
             encoded_filename = "/".join(encoded_segments)
@@ -821,14 +884,17 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
         if filename.lower().endswith(".svg"):
             return send_file(file_path, mimetype="image/svg+xml")
         if filename.lower().endswith(".html"):
-            try:
-                html = read_text_file(file_path)
-                injected = inject_ai_widget_into_html(html) if html else html
-                if injected:
-                    return Response(injected, mimetype="text/html; charset=utf-8")
-            except Exception:
-                pass
-        return send_file(file_path)
+            rendered = render_prototype_html(file_path)
+            if rendered:
+                return rendered
+        guessed_mimetype = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+        if filename.lower().endswith(".js"):
+            guessed_mimetype = "application/javascript; charset=utf-8"
+        elif filename.lower().endswith(".mjs"):
+            guessed_mimetype = "application/javascript; charset=utf-8"
+        elif filename.lower().endswith(".css"):
+            guessed_mimetype = "text/css; charset=utf-8"
+        return send_file(file_path, mimetype=guessed_mimetype)
 
     @app.route("/profile", methods=["GET", "POST"])
     @login_required
@@ -1127,9 +1193,11 @@ def register_routes(app: Flask, deps: AppDeps) -> None:
             # 不存在同名原型，创建新原型
             proto = Prototype(
                 name=name,
-                owner_id=current_user.id,
-                updater_id=current_user.id,
+                owner_id=user.id,
+                updater_id=user.id,
                 project_id=project_id,
+                resource_type=resource_type,
+                target_url=target_url,
                 is_public=is_public,
             )
             if access_password:

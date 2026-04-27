@@ -161,6 +161,8 @@ class Prototype(db.Model):
     updater_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     updater = db.relationship("User", foreign_keys=[updater_id])
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"), nullable=True)
+    resource_type = db.Column(db.String(20), nullable=False, server_default="axure")  # axure, static, url
+    target_url = db.Column(db.String(500), nullable=True)
     rule_keywords = db.Column(db.Text, nullable=True, default='["jiao_hu_gui_ze"]')
     viewing_users = db.relationship(
         "User",
