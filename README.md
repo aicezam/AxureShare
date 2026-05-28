@@ -103,6 +103,117 @@ python app.py
 
 访问 `http://localhost:7855` 即可使用。
 
+## Docker 一键部署（源码挂载方式）
+
+项目提供了 Docker 源码挂载部署方式：镜像只提供 Python 运行环境，源码目录会挂载到容器 `/workspace`。因此后续修改代码或拉取最新代码后，不需要重新构建镜像，只需要重启容器即可生效。
+
+### 部署要求
+
+- 已安装 Docker
+- Linux / Debian 环境可直接执行 `.sh` 脚本
+- Windows 环境可直接执行 PowerShell 脚本
+
+### Linux / Debian 一键部署
+
+```bash
+chmod +x deploy-docker.sh docker/entrypoint.sh update-docker.sh
+./deploy-docker.sh
+```
+
+### Windows PowerShell 一键部署
+
+```powershell
+.\deploy-docker.ps1
+```
+
+部署完成后访问：
+
+```text
+http://localhost:7855
+```
+
+部署脚本会自动完成以下操作：
+
+1. 如果不存在 `.env`，自动从 `.env.example` 复制一份。
+2. 创建 `instance`、`uploads/prototypes`、`uploads/source_files`、`uploads/attachments` 目录。
+3. 构建运行环境镜像，默认镜像名为 `axure-share-runtime:latest`。
+4. 删除旧容器并创建新容器，默认容器名为 `axure-share`。
+5. 将当前源码目录挂载到容器 `/workspace`。
+6. 容器启动时安装 `requirements.txt`、执行 `flask db upgrade` 并运行 `python app.py`。
+
+### 更新代码并重启容器
+
+如果只是修改了源码，执行：
+
+```bash
+docker restart axure-share
+```
+
+如果当前目录是 Git 仓库，也可以使用更新脚本自动拉取代码并重启容器：
+
+Linux / Debian：
+
+```bash
+./update-docker.sh
+```
+
+Windows PowerShell：
+
+```powershell
+.\update-docker.ps1
+```
+
+### 使用 docker compose 启动
+
+如果已经构建或拉取了运行环境镜像，也可以使用：
+
+```bash
+docker compose up -d
+```
+
+`docker-compose.yml` 默认使用镜像：
+
+```text
+axure-share-runtime:latest
+```
+
+如需指定镜像名：
+
+```bash
+AXURE_SHARE_IMAGE=your-registry/axure-share-runtime:latest docker compose up -d
+```
+
+Windows PowerShell：
+
+```powershell
+$env:AXURE_SHARE_IMAGE="your-registry/axure-share-runtime:latest"
+docker compose up -d
+```
+
+### Docker 部署环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `AXURE_SHARE_IMAGE` | `axure-share-runtime:latest` | Docker 镜像名称 |
+| `AXURE_SHARE_CONTAINER` | `axure-share` | 容器名称 |
+| `AXURE_SHARE_PORT` | `7855` | 宿主机访问端口 |
+| `PIP_INDEX_URL` | `https://pypi.tuna.tsinghua.edu.cn/simple` | 容器内安装依赖使用的 pip 源 |
+
+示例：修改端口为 `8080` 部署。
+
+Linux / Debian：
+
+```bash
+AXURE_SHARE_PORT=8080 ./deploy-docker.sh
+```
+
+Windows PowerShell：
+
+```powershell
+$env:AXURE_SHARE_PORT="8080"
+.\deploy-docker.ps1
+```
+
 ## 管理命令
 
 ### 创建管理员用户

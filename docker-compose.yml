@@ -1,0 +1,16 @@
+services:
+  axure-share:
+    image: ${AXURE_SHARE_IMAGE:-axure-share-runtime:latest}
+    container_name: ${AXURE_SHARE_CONTAINER:-axure-share}
+    working_dir: /workspace
+    ports:
+      - "${AXURE_SHARE_PORT:-7855}:7855"
+    volumes:
+      - ./:/workspace
+    env_file:
+      - .env
+    environment:
+      FLASK_APP: app.py
+      PYTHONUNBUFFERED: "1"
+      PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+    restart: unless-stopped
